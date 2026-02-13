@@ -23,11 +23,13 @@ import net.ccbluex.liquidbounce.features.module.modules.movement.longjumpmodes.o
 import net.ccbluex.liquidbounce.features.module.modules.movement.longjumpmodes.other.VerusDamage.damaged
 import net.ccbluex.liquidbounce.utils.extensions.isMoving
 import net.ccbluex.liquidbounce.utils.extensions.tryJump
-import net.ccbluex.liquidbounce.utils.MovementUtils
+import net.ccbluex.liquidbounce.utils.ClientUtils // Для вывода сообщений
+import net.ccbluex.liquidbounce.utils.MoveUtils // Самое вероятное название в FDP
 import net.minecraft.block.BlockSlab
 import net.minecraft.block.BlockStairs
 import net.minecraft.network.play.server.S08PacketPlayerPosLook
 import net.minecraft.util.BlockPos
+import net.minecraft.util.ChatComponentText
 
 object LongJump : Module("LongJump", Category.MOVEMENT, Category.SubCategory.MOVEMENT_MAIN) {
 
@@ -48,7 +50,6 @@ object LongJump : Module("LongJump", Category.MOVEMENT, Category.SubCategory.MOV
     private val autoJump by boolean("AutoJump", true)
     val autoDisable by boolean("AutoDisable", true) { mode == "VerusDamage" || mode == "Matrix" }
 
-    // Твои переменные для портов
     var jumped = false
     var canBoost = false
     var teleported = false
@@ -76,7 +77,7 @@ object LongJump : Module("LongJump", Category.MOVEMENT, Category.SubCategory.MOV
                 }
 
                 if (slot == -1) {
-                    chat("У вас нет блоков!")
+                    mc.thePlayer.addChatMessage(ChatComponentText("§c[LongJump] §fУ вас нет блоков!"))
                     state = false
                     return@handler
                 }
@@ -128,14 +129,14 @@ object LongJump : Module("LongJump", Category.MOVEMENT, Category.SubCategory.MOV
             }
 
             if (canBoost) {
-                MovementUtils.setSpeed(matrixSpeed.toDouble())
+                // Пытаемся заюзать MoveUtils (стандарт для FDP)
+                MoveUtils.setSpeed(matrixSpeed.toDouble())
                 mc.thePlayer.motionY = 0.42
                 if (flag) state = false
             }
             ticks++
         }
 
-        // Оригинальная логика лонгджампов
         if (jumped) {
             if (mc.thePlayer.onGround || mc.thePlayer.capabilities.isFlying) {
                 jumped = false
