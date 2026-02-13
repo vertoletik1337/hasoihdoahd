@@ -15,7 +15,6 @@
     "client.MixinMovementInput",
     "client.MixinMovementInputFromOptions",
     "client.MixinProfiler",
-    "client.MixinResourcePackRepository",
     "entity.MixinAbstractClientPlayer",
     "entity.MixinEntity",
     "entity.MixinEntityLivingBase",
