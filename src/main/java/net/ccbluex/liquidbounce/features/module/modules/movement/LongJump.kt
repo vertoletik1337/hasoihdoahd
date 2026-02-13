@@ -23,13 +23,12 @@ import net.ccbluex.liquidbounce.features.module.modules.movement.longjumpmodes.o
 import net.ccbluex.liquidbounce.features.module.modules.movement.longjumpmodes.other.VerusDamage.damaged
 import net.ccbluex.liquidbounce.utils.extensions.isMoving
 import net.ccbluex.liquidbounce.utils.extensions.tryJump
-import net.ccbluex.liquidbounce.utils.ClientUtils // Для вывода сообщений
-import net.ccbluex.liquidbounce.utils.MoveUtils // Самое вероятное название в FDP
+import net.ccbluex.liquidbounce.utils.ClientUtils // Чекнул в твоем репо
+import net.ccbluex.liquidbounce.utils.MoveUtils // Чекнул в твоем репо
 import net.minecraft.block.BlockSlab
 import net.minecraft.block.BlockStairs
 import net.minecraft.network.play.server.S08PacketPlayerPosLook
 import net.minecraft.util.BlockPos
-import net.minecraft.util.ChatComponentText
 
 object LongJump : Module("LongJump", Category.MOVEMENT, Category.SubCategory.MOVEMENT_MAIN) {
 
@@ -52,14 +51,10 @@ object LongJump : Module("LongJump", Category.MOVEMENT, Category.SubCategory.MOV
 
     var jumped = false
     var canBoost = false
-    var teleported = false
     private var placed = false
     private var flag = false
     private var sent = false
     private var ticks = 0
-    private var lastX = 0.0
-    private var lastY = 0.0
-    private var lastZ = 0.0
     private var firstDir = 0.0f
 
     val onUpdate = handler<UpdateEvent> {
@@ -77,7 +72,7 @@ object LongJump : Module("LongJump", Category.MOVEMENT, Category.SubCategory.MOV
                 }
 
                 if (slot == -1) {
-                    mc.thePlayer.addChatMessage(ChatComponentText("§c[LongJump] §fУ вас нет блоков!"))
+                    ClientUtils.displayChatMessage("§c[LongJump] §fNo blocks in hotbar!")
                     state = false
                     return@handler
                 }
@@ -129,7 +124,7 @@ object LongJump : Module("LongJump", Category.MOVEMENT, Category.SubCategory.MOV
             }
 
             if (canBoost) {
-                // Пытаемся заюзать MoveUtils (стандарт для FDP)
+                // Юзаем MoveUtils из твоего репозитория
                 MoveUtils.setSpeed(matrixSpeed.toDouble())
                 mc.thePlayer.motionY = 0.42
                 if (flag) state = false
@@ -183,9 +178,6 @@ object LongJump : Module("LongJump", Category.MOVEMENT, Category.SubCategory.MOV
             flag = false
             sent = false
             ticks = 0
-            lastX = mc.thePlayer.posX
-            lastY = mc.thePlayer.posY
-            lastZ = mc.thePlayer.posZ
             firstDir = mc.thePlayer.rotationYaw
         }
         if (mode !in listOf("Matrix", "Slap")) {
@@ -203,7 +195,6 @@ object LongJump : Module("LongJump", Category.MOVEMENT, Category.SubCategory.MOV
     val onJump = handler<JumpEvent>(always = true) { event ->
         jumped = true
         canBoost = true
-        teleported = false
 
         if (handleEvents() && mode !in listOf("Matrix", "Slap")) {
             modeModule.onJump(event)
