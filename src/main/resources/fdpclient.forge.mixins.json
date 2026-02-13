@@ -58,7 +58,6 @@
     "render.MixinModelPlayerFix",
     "render.MixinRender",
     "render.MixinRenderEntityItem",
-    "render.MixinRendererLivingEntity",
     "render.MixinRenderItem",
     "render.MixinRenderManager",
     "render.MixinRenderPlayer",
