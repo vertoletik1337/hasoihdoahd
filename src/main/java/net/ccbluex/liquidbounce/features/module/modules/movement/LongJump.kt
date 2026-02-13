@@ -23,12 +23,13 @@ import net.ccbluex.liquidbounce.features.module.modules.movement.longjumpmodes.o
 import net.ccbluex.liquidbounce.features.module.modules.movement.longjumpmodes.other.VerusDamage.damaged
 import net.ccbluex.liquidbounce.utils.extensions.isMoving
 import net.ccbluex.liquidbounce.utils.extensions.tryJump
-import net.ccbluex.liquidbounce.utils.ClientUtils // Чекнул в твоем репо
-import net.ccbluex.liquidbounce.utils.MoveUtils // Чекнул в твоем репо
 import net.minecraft.block.BlockSlab
 import net.minecraft.block.BlockStairs
 import net.minecraft.network.play.server.S08PacketPlayerPosLook
 import net.minecraft.util.BlockPos
+import net.minecraft.util.ChatComponentText
+import kotlin.math.cos
+import kotlin.math.sin
 
 object LongJump : Module("LongJump", Category.MOVEMENT, Category.SubCategory.MOVEMENT_MAIN) {
 
@@ -49,13 +50,40 @@ object LongJump : Module("LongJump", Category.MOVEMENT, Category.SubCategory.MOV
     private val autoJump by boolean("AutoJump", true)
     val autoDisable by boolean("AutoDisable", true) { mode == "VerusDamage" || mode == "Matrix" }
 
+    @JvmField
     var jumped = false
+    @JvmField
     var canBoost = false
+    @JvmField
+    var teleported = false // Чтобы AACv3 не ругался
+
     private var placed = false
     private var flag = false
     private var sent = false
     private var ticks = 0
     private var firstDir = 0.0f
+
+    // Прямой расчет скорости без MoveUtils
+    private fun strafe(speed: Double) {
+        var yaw = mc.thePlayer.rotationYaw.toDouble()
+        val forward = mc.thePlayer.movementInput.moveForward.toDouble()
+        val strafe = mc.thePlayer.movementInput.moveStrafe.toDouble()
+        if (forward == 0.0 && strafe == 0.0) {
+            mc.thePlayer.motionX = 0.0
+            mc.thePlayer.motionZ = 0.0
+        } else {
+            if (forward != 0.0) {
+                if (strafe > 0.0) {
+                    yaw += (if (forward > 0.0) -45 else 45).toDouble()
+                } else if (strafe < 0.0) {
+                    yaw += (if (forward > 0.0) 45 else -45).toDouble()
+                }
+            }
+            val rad = Math.toRadians(yaw)
+            mc.thePlayer.motionX = -sin(rad) * speed
+            mc.thePlayer.motionZ = cos(rad) * speed
+        }
+    }
 
     val onUpdate = handler<UpdateEvent> {
         val currentMode = mode
@@ -72,7 +100,7 @@ object LongJump : Module("LongJump", Category.MOVEMENT, Category.SubCategory.MOV
                 }
 
                 if (slot == -1) {
-                    ClientUtils.displayChatMessage("§c[LongJump] §fNo blocks in hotbar!")
+                    mc.thePlayer.addChatMessage(ChatComponentText("§c[LongJump] §fNo blocks!"))
                     state = false
                     return@handler
                 }
@@ -124,8 +152,7 @@ object LongJump : Module("LongJump", Category.MOVEMENT, Category.SubCategory.MOV
             }
 
             if (canBoost) {
-                // Юзаем MoveUtils из твоего репозитория
-                MoveUtils.setSpeed(matrixSpeed.toDouble())
+                strafe(matrixSpeed.toDouble())
                 mc.thePlayer.motionY = 0.42
                 if (flag) state = false
             }
@@ -173,8 +200,10 @@ object LongJump : Module("LongJump", Category.MOVEMENT, Category.SubCategory.MOV
 
     override fun onEnable() {
         placed = false
+        jumped = false
+        canBoost = false
+        teleported = false
         if (mode == "Matrix") {
-            canBoost = false
             flag = false
             sent = false
             ticks = 0
@@ -195,6 +224,7 @@ object LongJump : Module("LongJump", Category.MOVEMENT, Category.SubCategory.MOV
     val onJump = handler<JumpEvent>(always = true) { event ->
         jumped = true
         canBoost = true
+        teleported = false
 
         if (handleEvents() && mode !in listOf("Matrix", "Slap")) {
             modeModule.onJump(event)
